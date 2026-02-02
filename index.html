@@ -352,22 +352,38 @@
         const audioRef = useRef(null);
 
         const handleStart = () => {
-          setStarted(true);
-          setIsPlaying(true);
+          // MODIFIKASI: Coba putar musik DULU sebelum ganti state.
+          // Ini penting untuk browser mobile agar tidak memblokir autoplay.
           if (audioRef.current) {
             audioRef.current.volume = 0.5;
             const playPromise = audioRef.current.play();
+
             if (playPromise !== undefined) {
-              playPromise.catch((error) => {
-                console.error("Playback failed:", error);
-              });
+              playPromise
+                .then(() => {
+                  // Audio berhasil diputar
+                  setIsPlaying(true);
+                })
+                .catch((error) => {
+                  console.error("Playback failed:", error);
+                  // Tetap lanjut meski gagal, nanti user bisa play manual
+                });
             }
           }
+
+          // Beri sedikit jeda agar command 'play' tereksekusi sebelum tombol hilang dari DOM
+          // Ini trik untuk mobile safari/chrome
+          setTimeout(() => {
+            setStarted(true);
+          }, 100);
         };
 
         const togglePlay = () => {
-          if (isPlaying) audioRef.current.pause();
-          else audioRef.current.play();
+          if (isPlaying) {
+            audioRef.current.pause();
+          } else {
+            audioRef.current.play();
+          }
           setIsPlaying(!isPlaying);
         };
 
@@ -384,20 +400,20 @@
                 if (isPlaying) audioRef.current.play();
               }
             }, 100);
-            alert(
-              "Gagal memuat lagu dari GitHub (mungkin file terlalu besar atau baru diupload). Memutar lagu cadangan.",
-            );
           } else {
-            alert("Maaf, audio tidak dapat diputar sama sekali.");
+            // Jangan alert terus menerus, cukup log saja
+            console.log("Backup audio juga gagal.");
           }
         };
 
         return (
           <div className="min-h-screen relative selection:bg-rose-500 selection:text-white">
+            {/* Tambahkan preload="auto" */}
             <audio
               ref={audioRef}
               src={currentAudio}
               loop
+              preload="auto"
               onError={handleAudioError}
             />
 

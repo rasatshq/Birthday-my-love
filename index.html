@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Birthday ❤️</title>
+
+    <!-- React & Libraries -->
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Outfit:wght@200;400;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: "Outfit", sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+        overflow-x: hidden;
+      }
+      .font-script {
+        font-family: "Dancing Script", cursive;
+      }
+
+      /* Dark Glassmorphism */
+      .glass-dark {
+        background: rgba(17, 25, 40, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.125);
+      }
+
+      .text-glow {
+        text-shadow: 0 0 20px rgba(251, 113, 133, 0.5);
+      }
+
+      /* Firefly Animation */
+      .firefly {
+        position: fixed;
+        width: 4px;
+        height: 4px;
+        background-color: #fb7185; /* Rose color */
+        border-radius: 50%;
+        box-shadow: 0 0 10px #fb7185, 0 0 20px #fb7185;
+        animation: moveFirefly linear infinite;
+        opacity: 0;
+        z-index: 0;
+      }
+
+      @keyframes moveFirefly {
+        0% {
+          opacity: 0;
+          transform: translate(0, 0);
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translate(var(--moveX), var(--moveY));
+        }
+      }
+
+      /* Vinyl Spin Animation */
+      .spin-slow {
+        animation: spin 8s linear infinite;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+      const { motion, AnimatePresence } = window.Motion;
+
+      // --- ICONS ---
+      const Icons = {
+        Play: () => (
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        ),
+        Pause: () => (
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+        ),
+        Heart: () => (
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            stroke="none"
+          >
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        ),
+        Music: () => (
+          <svg
+            className="w-5 h-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+          </svg>
+        ),
+      };
+
+      // --- DATA EDITABLE ---
+      const DATA = {
+        // FOTO DARI GITHUB (Total 5 Foto)
+        // Foto ke-3 (index 2) akan berada di TENGAH (Center Piece)
+        photos: [
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Images/Images 6.jpeg",
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Images/Images 7.jpeg",
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Images/Images 8.jpeg", // Foto Tengah Spesial
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Images/Images 9.jpeg",
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Images/Images 10.jpeg",
+        ],
+
+        audioSrc:
+          "https://raw.githubusercontent.com/rasatshq/romantic-music/main/Nadhif%20Basalamah%20-%20bergema%20sampai%20selamanya%20(Official%20Lyric%20Video).mp3",
+
+        backupAudio:
+          "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
+
+        songTitle: "Bergema Sampai Selamanya",
+        artist: "Nadhif Basalamah",
+        message: `Selamat ulang tahun, sayangku.
+                    Di hari lahirmu ini, aku cuma ingin kamu tahu satu hal:
+                    kehadiranmu adalah hal paling indah yang pernah Tuhan titipkan di hidupku.
+
+                    Terima kasih sudah menjadi rumah saat aku lelah,
+                    menjadi tawa saat hariku berat,
+                    dan menjadi alasan kenapa aku selalu ingin pulang.
+
+                    Semoga semua doa baik menemukanmu,
+                    semoga senyummu selalu punya alasan,
+                    dan semoga aku masih bisa ada di sampingmu di setiap ulang tahunmu nanti.
+
+                    Aku sayang kamu, hari ini, besok, dan seterusnya. 🤍`,
+      };
+
+      // --- COMPONENTS ---
+
+      const Fireflies = () => {
+        const [flies, setFlies] = useState([]);
+
+        useEffect(() => {
+          const count = 20;
+          const newFlies = Array.from({ length: count }).map((_, i) => ({
+            id: i,
+            left: Math.random() * 100,
+            top: Math.random() * 100,
+            moveX: (Math.random() - 0.5) * 200 + "px",
+            moveY: (Math.random() - 0.5) * 200 + "px",
+            duration: Math.random() * 10 + 10,
+            delay: Math.random() * 5,
+          }));
+          setFlies(newFlies);
+        }, []);
+
+        return (
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            {flies.map((fly) => (
+              <div
+                key={fly.id}
+                className="firefly"
+                style={{
+                  left: `${fly.left}%`,
+                  top: `${fly.top}%`,
+                  "--moveX": fly.moveX,
+                  "--moveY": fly.moveY,
+                  animationDuration: `${fly.duration}s`,
+                  animationDelay: `${fly.delay}s`,
+                }}
+              />
+            ))}
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/80 to-purple-950/50 z-[-1]"></div>
+          </div>
+        );
+      };
+
+      const MusicPlayer = ({ isPlaying, togglePlay }) => {
+        return (
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            className="fixed bottom-0 left-0 right-0 p-4 z-50 flex justify-center pointer-events-none"
+          >
+            <div className="glass-dark rounded-full px-6 py-3 flex items-center gap-4 shadow-2xl shadow-rose-900/20 pointer-events-auto border border-white/10">
+              <div
+                className={`w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-purple-600 flex items-center justify-center ${
+                  isPlaying ? "spin-slow" : ""
+                }`}
+              >
+                <Icons.Music />
+              </div>
+              <div className="flex flex-col pr-4">
+                <span className="text-sm font-semibold text-white tracking-wide">
+                  {DATA.songTitle}
+                </span>
+                <span className="text-xs text-slate-400">{DATA.artist}</span>
+              </div>
+              <button
+                onClick={togglePlay}
+                className="w-10 h-10 rounded-full bg-white text-slate-900 flex items-center justify-center hover:scale-105 transition-transform active:scale-95"
+              >
+                {isPlaying ? <Icons.Pause /> : <Icons.Play />}
+              </button>
+            </div>
+          </motion.div>
+        );
+      };
+
+      const IntroScreen = ({ onStart }) => (
+        <motion.div
+          className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6 text-center"
+          exit={{ opacity: 0, y: -50 }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+        >
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-600/20 rounded-full blur-[100px]"></div>
+          </div>
+
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1 }}
+            className="relative z-10"
+          >
+            <h1 className="font-script text-5xl md:text-7xl text-white mb-2 text-glow">
+              For You
+            </h1>
+            <p className="text-slate-400 text-sm tracking-[0.3em] uppercase mb-12">
+              The world is quiet without you
+            </p>
+
+            <button
+              onClick={onStart}
+              className="group relative px-8 py-3 bg-transparent overflow-hidden rounded-full border border-slate-700 transition-all hover:border-rose-500"
+            >
+              <div className="absolute inset-0 w-0 bg-rose-600 transition-all duration-[250ms] ease-out group-hover:w-full opacity-20"></div>
+              <span className="relative flex items-center gap-2 text-slate-200 group-hover:text-white transition-colors">
+                <Icons.Play />
+                Open Invitation
+              </span>
+            </button>
+          </motion.div>
+        </motion.div>
+      );
+
+      const Gallery = () => (
+        <div className="py-20 px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-script text-4xl text-rose-300 mb-2">
+              Captured Moments
+            </h2>
+            <div className="h-1 w-20 bg-gradient-to-r from-transparent via-rose-500 to-transparent mx-auto"></div>
+          </motion.div>
+
+          {/* Grid diubah menjadi 2 kolom untuk tampilan 5 foto yang seimbang */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {DATA.photos.map((src, i) => {
+              // Logika Layout 5 Foto (2 - 1 - 2)
+              // Foto index 2 (ke-3) akan di tengah dan lebih besar
+              const isCenter = i === 2;
+
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.05, zIndex: 10 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className={`
+                                    bg-white p-2 pb-6 shadow-2xl transform transition-all duration-300
+                                    ${
+                                      isCenter
+                                        ? "lg:col-span-2 lg:w-2/3 lg:mx-auto lg:z-20"
+                                        : ""
+                                    }
+                                `}
+                >
+                  {/* Aspect Ratio 16:9 Landscape */}
+                  <div className="aspect-[16/9] overflow-hidden bg-gray-100">
+                    <img
+                      src={src}
+                      className="w-full h-full object-cover filter sepia-[0.1]"
+                      alt="Memory"
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      );
+
+      const App = () => {
+        const [started, setStarted] = useState(false);
+        const [isPlaying, setIsPlaying] = useState(false);
+        const [currentAudio, setCurrentAudio] = useState(DATA.audioSrc);
+        const audioRef = useRef(null);
+
+        const handleStart = () => {
+          setStarted(true);
+          setIsPlaying(true);
+          if (audioRef.current) {
+            audioRef.current.volume = 0.5;
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              playPromise.catch((error) => {
+                console.error("Playback failed:", error);
+              });
+            }
+          }
+        };
+
+        const togglePlay = () => {
+          if (isPlaying) audioRef.current.pause();
+          else audioRef.current.play();
+          setIsPlaying(!isPlaying);
+        };
+
+        const handleAudioError = (e) => {
+          console.error("Audio error event:", e);
+          console.error("Failed source:", currentAudio);
+
+          if (currentAudio === DATA.audioSrc) {
+            console.log("Mencoba memutar audio cadangan...");
+            setCurrentAudio(DATA.backupAudio);
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.load();
+                if (isPlaying) audioRef.current.play();
+              }
+            }, 100);
+            alert(
+              "Gagal memuat lagu dari GitHub (mungkin file terlalu besar atau baru diupload). Memutar lagu cadangan.",
+            );
+          } else {
+            alert("Maaf, audio tidak dapat diputar sama sekali.");
+          }
+        };
+
+        return (
+          <div className="min-h-screen relative selection:bg-rose-500 selection:text-white">
+            <audio
+              ref={audioRef}
+              src={currentAudio}
+              loop
+              onError={handleAudioError}
+            />
+
+            <AnimatePresence>
+              {!started && <IntroScreen onStart={handleStart} />}
+            </AnimatePresence>
+
+            {started && (
+              <main className="relative w-full overflow-hidden">
+                <Fireflies />
+
+                <section className="min-h-screen flex flex-col justify-center items-center text-center p-6 relative">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 1.5 }}
+                    className="relative z-10"
+                  >
+                    <div className="mb-6 inline-block p-4 rounded-full border border-rose-500/30 bg-rose-500/10 backdrop-blur-md">
+                      <div className="text-rose-400 animate-pulse">
+                        <Icons.Heart />
+                      </div>
+                    </div>
+                    <h1 className="font-script text-6xl md:text-8xl text-transparent bg-clip-text bg-gradient-to-b from-rose-200 to-rose-500 mb-6 drop-shadow-2xl">
+                      Happy Birthday
+                    </h1>
+                    <p className="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-lg mx-auto leading-relaxed">
+                      Kehadiranmu membuat semesta yang gelap ini menjadi lebih
+                      indah.
+                    </p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 2, duration: 1 }}
+                    className="absolute bottom-20 left-1/2 -translate-x-1/2 animate-bounce text-slate-500"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                      ></path>
+                    </svg>
+                  </motion.div>
+                </section>
+
+                <Gallery />
+
+                <section className="py-20 px-4 flex justify-center relative z-10 mb-32">
+                  <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="glass-dark max-w-2xl w-full p-8 md:p-12 rounded-3xl shadow-2xl border-t border-white/10"
+                  >
+                    <h3 className="font-script text-4xl text-rose-400 mb-8">
+                      Sebuah Pesan
+                    </h3>
+                    <div className="prose prose-invert prose-lg leading-loose text-slate-300 whitespace-pre-line">
+                      {DATA.message}
+                    </div>
+                    <div className="mt-10 text-right font-script text-2xl text-rose-300">
+                      With Love
+                    </div>
+                  </motion.div>
+                </section>
+
+                <MusicPlayer isPlaying={isPlaying} togglePlay={togglePlay} />
+              </main>
+            )}
+          </div>
+        );
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+    </script>
+  </body>
+</html>
